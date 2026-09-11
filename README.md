@@ -2,49 +2,48 @@
 
 A computer vision classification pipeline built with PyTorch and torchvision that classifies cropped microplastic particles into two morphological categories: **fiber** and **fragment**.
 
-This repository contains a standalone computer vision portfolio project developed out of a broader research interest in microplastic analysis. It provides an end-to-end workflow covering dataset extraction from COCO annotations, transfer learning with ResNet18, controlled ablation experiments, model evaluation on a held-out test set, confidence analysis, and Grad-CAM interpretability visualization.
+This repository contains a standalone computer vision portfolio project developed as part of a broader research interest in microplastic analysis. It provides an end-to-end workflow covering dataset preprocessing from COCO annotations, transfer learning with ResNet18, controlled ablation experiments, held-out test evaluation, confidence analysis, and Grad-CAM interpretability visualization.
 
 ---
 
 ## Overview
 
-Microplastic particles present distinct morphological characteristics under optical microscopy and smartphone imaging. Classifying particle types automatically can support environmental monitoring workflows.
+Microplastic pollution analysis requires identifying distinct particle morphologies under microscopy and digital imaging. Automatically classifying microplastic shapes can streamline environmental monitoring and dataset processing.
 
-This project implements a binary image classifier targeting two primary microplastic shapes:
+This project implements a binary image classifier targeting two primary microplastic particle shapes:
 * **Fiber**: Elongated, thread-like synthetic structures.
 * **Fragment**: Irregular, rigid, angular or sheet-like synthetic particles.
 
-Using a transfer learning strategy based on ResNet18, the pipeline achieves strong performance on the held-out test split, reaching an overall test accuracy of **97.33%** and a Macro F1-score of **97.11%** (73 correct predictions out of 75 test particles).
+Using a transfer learning strategy based on ResNet18, the fine-tuned model achieved **97.33% accuracy** and a Macro F1-score of **97.11%** on the project's held-out test set (73 correct predictions out of 75 test particles).
 
 ---
 
 ## Dataset
 
-The model is trained and evaluated using annotations from a publicly available dataset on Mendeley Data:
+The dataset was obtained from Roboflow Universe:
 
-> **Title**: Research data for Microplastic quantification and chemical characterization in salt samples, using stereomicroscopy, smartphone camera and supervised machine learning tools  
-> **Source**: Mendeley Data  
-> **DOI**: [10.17632/5c4wfd99w8.2](https://doi.org/10.17632/5c4wfd99w8.2)  
-> **Version**: 2  
-> **Published**: June 15, 2026  
-> **License**: [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
+* **Platform**: Roboflow Universe
+* **Dataset Name**: Microplastic v2
+* **Version**: Version 2
+* **Roboflow Workspace**: `research-new-things-m0fiq/microplastic-v2-wowak`
+* **Dataset Page**: [Roboflow Universe Dataset Link](https://universe.roboflow.com/research-new-things-m0fiq/microplastic-v2-wowak/dataset/2)
 
-### Dataset Attribution and Redistribution Notice
-Per the terms of the CC BY-NC-ND 4.0 license, the original images and derived image crops are **not redistributed** in this repository. Users who wish to run the pipeline locally must download the raw dataset directly from Mendeley Data and place it into the project directory as described in the setup instructions below.
+### Dataset Attribution and License Terms
+The dataset metadata file (`mp/README.dataset.txt`) indicates that the dataset is distributed under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. Per Roboflow Universe distribution guidelines, raw dataset images and cropped files are not included in this repository. Please consult the original Roboflow dataset page linked above for official license details and dataset updates.
 
 ---
 
-## Data Processing
+## Dataset Processing
 
-The original dataset provides full-frame microscopy and smartphone camera images accompanied by COCO-format JSON annotation files (`_annotations.coco.json`). 
+The dataset contains full-frame microscopy and camera images with COCO-format JSON annotations (`_annotations.coco.json`).
 
-The preprocessing script [`crop_particles.py`](file:///d:/mp_classification/crop_particles.py) automates the extraction of individual particle crops:
-1. Parses COCO annotation files for `train`, `valid`, and `test` splits.
-2. Filters for target category IDs:
+The custom preprocessing script [`crop_particles.py`](file:///d:/mp_classification/crop_particles.py) automates particle extraction:
+1. Parses COCO annotation files across `train`, `valid`, and `test` splits.
+2. Filters target category IDs:
    * Category 3: `fiber`
    * Category 4: `fragment`
 3. Extracts bounding boxes `[x, y, width, height]` and converts coordinates to pixel boundaries.
-4. Crops bounding box regions from the source images and saves individual PNG files into class-specific directories.
+4. Crops bounding box regions from source images and saves individual PNG files into structured directories:
 
 ```
 data/
@@ -61,8 +60,8 @@ data/
 
 ### Dataset Statistics
 
-* **Total full-frame images**: 1,065
-* **Total COCO annotations**: 6,375
+* **Total full-frame images**: 1,477 (Train: 1,065 | Valid: 343 | Test: 69)
+* **Total COCO annotations**: 8,497 (Train: 6,375 | Valid: 1,985 | Test: 137)
 * **Total extracted target crops**: 720 (440 fibers, 280 fragments)
 
 | Split | Fiber Crops | Fragment Crops | Total Crops |
@@ -76,77 +75,108 @@ data/
 
 ## Methodology
 
-The end-to-end technical pipeline follows a structured machine learning workflow:
+The pipeline follows a systematic computer vision methodology from raw dataset extraction to model interpretability:
 
 ```
-Raw Dataset & COCO JSON
-       │
-       ▼
-Category Filtering (Fiber / Fragment)
-       │
-       ▼
-Bounding Box Cropping (crop_particles.py)
-       │
-       ▼
-Image Preprocessing & Data Augmentation
-       │
-       ▼
+Roboflow Universe Dataset
+           │
+           ▼
+    COCO Annotations
+           │
+           ▼
+Filter Fiber & Fragment Categories
+           │
+           ▼
+Bounding-Box Particle Cropping (crop_particles.py)
+           │
+           ▼
+Train / Validation / Test Dataset Splits
+           │
+           ▼
+Image Preprocessing & Augmentation
+           │
+           ▼
 ResNet18 Transfer Learning Experiments
- ├── Baseline (Frozen backbone)
- ├── Class-Weighted Loss (Frozen backbone)
- └── Fine-Tuned (Layer4 + FC unfrozen, Class-Weighted Loss)
-       │
-       ▼
-Validation Set Selection & Model Saving
-       │
-       ▼
+ ├── Baseline Experiment (Frozen backbone)
+ ├── Class-Weighted Experiment (Frozen backbone)
+ └── Fine-Tuning Experiment (Layer4 + FC unfrozen, Class-Weighted)
+           │
+           ▼
 Held-Out Test Set Evaluation
-       │
-       ▼
-Error Analysis & Interpretability
- ├── Confusion Matrix & Classification Report
- ├── Softmax Confidence Analysis (confidence_analysis.py)
- └── Grad-CAM Visualizations (gradcam.py)
+           │
+           ▼
+Confusion Matrix & Classification Metrics
+           │
+           ▼
+Confidence Analysis (confidence_analysis.py)
+           │
+           ▼
+Grad-CAM Error Analysis (gradcam.py)
 ```
+
+### Why Fine-Tuning Works
+Pretrained convolutional neural networks learn hierarchical visual representations. Early layers detect generic low-level features such as simple edges and color transitions, whereas deeper layers learn high-level, task-specific representations.
+
+In this pipeline, unfreezing `layer4` (the final residual block) alongside the classification head allowed the high-level spatial representations to adapt specifically to the visual textures and geometric features of microplastic fibers and fragments.
 
 ---
 
 ## Model Architecture
 
-The classifier is built on the **ResNet18** architecture pretrained on ImageNet weights (`ResNet18_Weights.DEFAULT`).
+The classifier uses a **ResNet18** backbone pretrained on ImageNet weights (`ResNet18_Weights.DEFAULT`).
 
-### Input Preprocessing and Augmentation
+### Input Preprocessing and Data Augmentation
 * **Input Resolution**: Resized to \(224 \times 224\) pixels.
-* **Normalization**: ImageNet mean (`[0.485, 0.456, 0.406]`) and standard deviation (`[0.229, 0.224, 0.225]`).
+* **Normalization**: Standard ImageNet mean (`[0.485, 0.456, 0.406]`) and standard deviation (`[0.229, 0.224, 0.225]`).
 * **Training Data Augmentation**:
   * Random Horizontal Flip
   * Random Rotation (up to 10 degrees)
-* **Validation and Test Pipeline**: Deterministic resizing and normalization without random transformations.
+* **Validation and Test Transformations**: Deterministic resizing and normalization without random transformations.
+
+---
+
+## Loss Function Explanation
+
+The project uses **CrossEntropyLoss** for training classification models.
+
+### Understanding CrossEntropyLoss
+CrossEntropyLoss evaluates how well predicted class probability distributions match actual target labels.
+* A **confident correct prediction** yields a loss close to zero.
+* A **confident incorrect prediction** yields a significantly higher penalty loss.
+
+During backward propagation, calculated loss gradients update trainable model parameters via the Adam optimizer to minimize classification loss in subsequent training iterations.
+
+### Class-Weighted Loss
+Due to class imbalance in training data (305 fibers vs 194 fragments), inverse-frequency class weighting was integrated into CrossEntropyLoss:
+* Higher loss weight assigned to minority class (fragment) errors.
+* Lower loss weight assigned to majority class (fiber) errors.
+
+Class weighting adjusts loss penalties during training without altering underlying training image counts or class labels.
 
 ---
 
 ## Controlled Experiments
 
-To evaluate the effect of fine-tuning and class weighting on performance, three controlled experiments were conducted in [`experiments.py`](file:///d:/mp_classification/experiments.py):
+Three controlled experiments were conducted in [`experiments.py`](file:///d:/mp_classification/experiments.py):
 
 1. **Baseline ResNet18**:
-   * Pretrained feature extraction layers frozen.
-   * Only the final linear classifier (`fc`) trained.
-   * Standard unweighted `CrossEntropyLoss`.
+   * Pretrained feature layers frozen (`requires_grad = False`).
+   * Final linear classifier (`fc`) trained.
+   * Standard unweighted CrossEntropyLoss.
    * Learning rate: \(1 \times 10^{-4}\), Adam optimizer, 10 epochs.
 
 2. **Class-Weighted ResNet18**:
-   * Pretrained feature extraction layers frozen.
-   * Only the final linear classifier trained.
-   * Inverse-frequency class-weighted `CrossEntropyLoss` applied to compensate for the dataset imbalance (305 train fibers vs 194 train fragments).
+   * Pretrained feature layers frozen.
+   * Final linear classifier trained.
+   * Class-weighted CrossEntropyLoss applied.
    * Learning rate: \(1 \times 10^{-4}\), Adam optimizer, 10 epochs.
-   * *Outcome*: Class weighting alone on a frozen backbone degraded generalization performance on this dataset.
+   * *Finding*: Class weighting alone on a frozen backbone did not improve performance in this setup and resulted in lower generalization accuracy.
 
 3. **Fine-Tuned ResNet18 (Best Model)**:
-   * Backbone unfrozen at `layer4` (the final residual block) and the classification head.
-   * Inverse-frequency class-weighted `CrossEntropyLoss`.
+   * Pretrained `layer4` and final classifier (`fc`) unfrozen.
+   * Class-weighted CrossEntropyLoss applied.
    * Lower learning rate for fine-tuning: \(1 \times 10^{-5}\), Adam optimizer, 10 epochs.
-   * *Outcome*: Unfreezing higher-level spatial feature maps allowed the network to adapt to microplastic textures, yielding superior accuracy.
+   * *Finding*: Fine-tuning deeper representations significantly improved feature discrimination, making it the top-performing model.
 
 ---
 
@@ -154,11 +184,13 @@ To evaluate the effect of fine-tuning and class weighting on performance, three 
 
 ### Model Comparison on Held-Out Test Set
 
-| Experiment Model | Overall Accuracy | Macro F1-Score | Correct / Total Test Images |
+| Model | Accuracy | Macro F1 | Correct / Total Test Images |
 | :--- | :---: | :---: | :---: |
 | **Baseline** | 84.00% | 81.62% | 63 / 75 |
-| **Class-Weighted** | 76.00% | 72.43% | 57 / 75 |
-| **Fine-Tuned (Best)** | **97.33%** | **97.11%** | **73 / 75** |
+| **Class Weighted** | 76.00% | 72.43% | 57 / 75 |
+| **Fine Tuned (Best)** | **97.33%** | **97.11%** | **73 / 75** |
+
+The fine-tuned ResNet18 achieved **97.33% accuracy** on the held-out test set, correctly classifying 73 out of 75 test particles.
 
 ### Fine-Tuned Model Classification Report
 
@@ -173,13 +205,13 @@ To evaluate the effect of fine-tuning and class weighting on performance, three 
 weighted avg     0.9744    0.9733    0.9731        75
 ```
 
-The fine-tuned model achieved perfect recall (100.00%) for fibers and perfect precision (100.00%) for fragments. Both misclassifications were fragments incorrectly predicted as fibers.
-
 ---
 
-## Error Analysis and Confidence Analysis
+## Error Analysis
 
-Running [`confidence_analysis.py`](file:///d:/mp_classification/confidence_analysis.py) on the fine-tuned model identified the two misclassified test instances:
+The fine-tuned model produced two misclassifications out of 75 test images. In both instances, actual fragment particles were misclassified as fibers.
+
+Softmax probability analysis using [`confidence_analysis.py`](file:///d:/mp_classification/confidence_analysis.py) showed moderately high-confidence incorrect predictions:
 
 ### Misclassified Sample 1
 * **Image File**: `NextCamera_20230627_220545_jpg.rf.a749fa7fd1c06231c496a3ae8016ee20_9.png`
@@ -199,11 +231,11 @@ Running [`confidence_analysis.py`](file:///d:/mp_classification/confidence_analy
 
 ---
 
-## Grad-CAM Interpretability Analysis
+## Grad-CAM Analysis
 
-Grad-CAM (Gradient-weighted Class Activation Mapping) was generated using [`gradcam.py`](file:///d:/mp_classification/gradcam.py) by targeting the final convolutional layer of `layer4` (`model.layer4[-1].conv2`).
+Grad-CAM (Gradient-weighted Class Activation Mapping) heatmaps were generated via [`gradcam.py`](file:///d:/mp_classification/gradcam.py) targeting the final convolutional layer of `layer4` (`model.layer4[-1].conv2`).
 
-Grad-CAM visualizes spatial regions that contribute to the network's final output score. It is an interpretability diagnostic tool rather than a definitive proof of causal reasoning.
+Grad-CAM highlights spatial regions associated with model predictions. It serves as an interpretability diagnostic tool rather than proof of causal reasoning.
 
 ```
 Original Image                  Grad-CAM Heatmap                Overlay Visualization
@@ -215,39 +247,39 @@ Original Image                  Grad-CAM Heatmap                Overlay Visualiz
 └───────────────────────┘       └───────────────────────┘       └───────────────────────┘
 ```
 
-### Visual Findings on Errors
+### Visual Insights from Misclassified Samples
 
-1. **First Misclassification**:
-   * Grad-CAM activation focused primarily on background elements adjacent to the particle edge rather than strictly within the particle boundaries.
-   * This observation indicates potential reliance on non-particle visual features or background artifacts present in the cropped image.
+1. **Misclassified Image 1**:
+   * Grad-CAM activation focused primarily on background region features surrounding the particle rather than strictly within particle boundaries.
+   * This observation indicates potential reliance on non-particle visual features or background artifacts present in the cropped sample.
 
-2. **Second Misclassification**:
-   * Grad-CAM displayed diffuse, low-intensity activations spread across the crop without a strongly localized focal region.
-   * This behavior suggests that the network lacked a distinct, localized morphological feature to differentiate the particle shape, leading to a default leaning toward the majority class (fiber).
+2. **Misclassified Image 2**:
+   * Grad-CAM displayed weak, diffuse activation without a clear, strongly highlighted focal region.
+   * This indicates that the sample was visually ambiguous for the learned representation, leading the model to default toward the majority fiber class.
 
 ---
 
 ## Visualizations and Generated Artifacts
 
-All experimental plots and analytical artifacts are saved in the [`results/`](file:///d:/mp_classification/results) directory:
+All visual outputs and trained models are stored in the [`results/`](file:///d:/mp_classification/results) directory:
 
-* **Training and Validation Plots**:
-  * [`results/fine_tuned_accuracy.png`](file:///d:/mp_classification/results/fine_tuned_accuracy.png): Accuracy progression per epoch for the fine-tuned model.
-  * [`results/fine_tuned_loss.png`](file:///d:/mp_classification/results/fine_tuned_loss.png): Training and validation loss curves for the fine-tuned model.
-  * [`results/baseline_accuracy.png`](file:///d:/mp_classification/results/baseline_accuracy.png) & [`results/baseline_loss.png`](file:///d:/mp_classification/results/baseline_loss.png): Curves for the baseline model.
-  * [`results/class_weighted_accuracy.png`](file:///d:/mp_classification/results/class_weighted_accuracy.png) & [`results/class_weighted_loss.png`](file:///d:/mp_classification/results/class_weighted_loss.png): Curves for the class-weighted model.
+* **Training and Validation Curves**:
+  * [`results/fine_tuned_accuracy.png`](file:///d:/mp_classification/results/fine_tuned_accuracy.png) & [`results/fine_tuned_loss.png`](file:///d:/mp_classification/results/fine_tuned_loss.png)
+  * [`results/baseline_accuracy.png`](file:///d:/mp_classification/results/baseline_accuracy.png) & [`results/baseline_loss.png`](file:///d:/mp_classification/results/baseline_loss.png)
+  * [`results/class_weighted_accuracy.png`](file:///d:/mp_classification/results/class_weighted_accuracy.png) & [`results/class_weighted_loss.png`](file:///d:/mp_classification/results/class_weighted_loss.png)
 
 * **Confusion Matrices**:
-  * [`results/fine_tuned_confusion_matrix.png`](file:///d:/mp_classification/results/fine_tuned_confusion_matrix.png): Heatmap showing test predictions (73 correct, 2 misclassified).
-  * [`results/baseline_confusion_matrix.png`](file:///d:/mp_classification/results/baseline_confusion_matrix.png) & [`results/class_weighted_confusion_matrix.png`](file:///d:/mp_classification/results/class_weighted_confusion_matrix.png): Comparative matrices.
+  * [`results/fine_tuned_confusion_matrix.png`](file:///d:/mp_classification/results/fine_tuned_confusion_matrix.png)
+  * [`results/baseline_confusion_matrix.png`](file:///d:/mp_classification/results/baseline_confusion_matrix.png)
+  * [`results/class_weighted_confusion_matrix.png`](file:///d:/mp_classification/results/class_weighted_confusion_matrix.png)
 
-* **Grad-CAM Visualizations**:
+* **Grad-CAM Visual Outputs**:
   * [`results/gradcam/NextCamera_20230627_220545_jpg.rf.a749fa7fd1c06231c496a3ae8016ee20_9_gradcam.png`](file:///d:/mp_classification/results/gradcam/NextCamera_20230627_220545_jpg.rf.a749fa7fd1c06231c496a3ae8016ee20_9_gradcam.png)
   * [`results/gradcam/NextCamera_20230627_222358_jpg.rf.374a9f493dd18b3393af392078425f1b_42_gradcam.png`](file:///d:/mp_classification/results/gradcam/NextCamera_20230627_222358_jpg.rf.374a9f493dd18b3393af392078425f1b_42_gradcam.png)
 
 * **Saved Weights & Misclassified Crops**:
-  * [`results/fine_tuned.pth`](file:///d:/mp_classification/results/fine_tuned.pth): Saved PyTorch state dictionary for the best fine-tuned model.
-  * [`results/misclassified/fine_tuned/`](file:///d:/mp_classification/results/misclassified/fine_tuned): Extracted image crops of the misclassified test samples.
+  * [`results/fine_tuned.pth`](file:///d:/mp_classification/results/fine_tuned.pth)
+  * [`results/misclassified/fine_tuned/`](file:///d:/mp_classification/results/misclassified/fine_tuned)
 
 ---
 
@@ -255,14 +287,14 @@ All experimental plots and analytical artifacts are saved in the [`results/`](fi
 
 ```
 mp_classification/
-├── inspect_dataset.py       # Helper script to inspect COCO category annotations
-├── crop_particles.py        # Preprocessing script to extract bounding box crops
-├── view_samples.py          # Utility script to display random dataset crops
-├── train.py                 # Standalone training script for ResNet18
-├── experiments.py           # Controlled evaluation script (Baseline vs Weighted vs Fine-Tuned)
-├── gradcam.py               # Grad-CAM heatmap generation script for error interpretability
-├── confidence_analysis.py   # Softmax probability analysis for misclassified samples
-├── mp/                      # Original Mendeley dataset directory (user supplied)
+├── inspect_dataset.py       # Utility to inspect COCO category annotations
+├── crop_particles.py        # Script to crop particles using COCO bounding boxes
+├── view_samples.py          # Script to display random cropped particle samples
+├── train.py                 # Standalone ResNet18 training script
+├── experiments.py           # Evaluation script comparing Baseline, Weighted, Fine-Tuned models
+├── gradcam.py               # Grad-CAM heatmap generation script
+├── confidence_analysis.py   # Softmax probability analyzer for misclassifications
+├── mp/                      # Roboflow dataset directory (downloaded by user)
 │   ├── train/
 │   ├── valid/
 │   └── test/
@@ -270,15 +302,15 @@ mp_classification/
 │   ├── train/
 │   ├── valid/
 │   └── test/
-└── results/                 # Evaluation output directory
+└── results/                 # Output models, evaluation charts, and heatmaps
     ├── baseline.pth
     ├── class_weighted.pth
     ├── fine_tuned.pth
     ├── fine_tuned_accuracy.png
     ├── fine_tuned_loss.png
     ├── fine_tuned_confusion_matrix.png
-    ├── gradcam/             # Generated Grad-CAM overlay visual outputs
-    └── misclassified/       # Misclassified sample crops per model
+    ├── gradcam/             # Generated Grad-CAM overlay outputs
+    └── misclassified/       # Extracted misclassified sample images
 ```
 
 ---
@@ -288,16 +320,16 @@ mp_classification/
 * **Programming Language**: Python 3.10+
 * **Deep Learning Framework**: PyTorch (`torch`, `torchvision`)
 * **Computer Vision & Image Processing**: OpenCV (`cv2`), Pillow (`PIL`)
-* **Data Evaluation & Metrics**: scikit-learn (`sklearn`), NumPy (`numpy`)
-* **Visualization & Plotting**: Matplotlib (`matplotlib`), Seaborn (`seaborn`)
+* **Data Metrics & Processing**: scikit-learn (`sklearn`), NumPy (`numpy`)
+* **Data Visualization**: Matplotlib (`matplotlib`), Seaborn (`seaborn`)
 
 ---
 
-## Installation and Setup
+## Installation
 
 ### 1. Environment Setup (Windows PowerShell)
 
-Create and activate a virtual environment:
+Create and activate a Python virtual environment:
 
 ```powershell
 python -m venv .venv
@@ -305,9 +337,9 @@ python -m venv .venv
 python -m pip install --upgrade pip
 ```
 
-### 2. Install Required Dependencies
+### 2. Install Project Dependencies
 
-Install the necessary Python packages:
+Install required packages:
 
 ```powershell
 pip install torch torchvision opencv-python numpy matplotlib seaborn scikit-learn Pillow
@@ -315,83 +347,76 @@ pip install torch torchvision opencv-python numpy matplotlib seaborn scikit-lear
 
 ---
 
-## Reproduction Workflow
+## Reproduction
 
-Follow these steps to reproduce the dataset extraction, training experiments, interpretability visualizations, and evaluation results.
+Follow these steps to replicate the experiment pipeline:
 
-### Step 1: Download and Place the Dataset
-1. Download the dataset from Mendeley Data: [DOI: 10.17632/5c4wfd99w8.2](https://data.mendeley.com/datasets/5c4wfd99w8.2).
-2. Extract the downloaded files into an `mp` folder in the project root:
+1. **Obtain Dataset**: Download the Microplastic v2 Version 2 dataset from [Roboflow Universe](https://universe.roboflow.com/research-new-things-m0fiq/microplastic-v2-wowak/dataset/2).
+2. **Extract Files**: Place the dataset files inside an `mp/` folder in the project root:
    ```
-   d:\mp_classification\mp\
-   ├── train\
+   mp/
+   ├── train/
    │   ├── _annotations.coco.json
    │   └── *.jpg
-   ├── valid\
+   ├── valid/
    │   ├── _annotations.coco.json
    │   └── *.jpg
-   └── test\
+   └── test/
        ├── _annotations.coco.json
        └── *.jpg
    ```
-
-### Step 2: Crop Particle Annotations
-Run the preprocessing script to parse COCO annotations and generate image crops in `data/`:
-
-```powershell
-python crop_particles.py
-```
-
-### Step 3: Run Model Training & Experiments
-Execute the controlled experiment suite (Baseline, Class-Weighted, Fine-Tuned):
-
-```powershell
-python experiments.py
-```
-
-*Alternatively, to run the standalone trainer:*
-```powershell
-python train.py
-```
-
-### Step 4: Generate Grad-CAM Interpretability Visualizations
-Produce Grad-CAM activation heatmaps for misclassified test instances:
-
-```powershell
-python gradcam.py
-```
-
-### Step 5: Run Confidence Analysis
-Print softmax class probabilities for misclassified samples:
-
-```powershell
-python confidence_analysis.py
-```
+3. **Crop Particles**: Extract bounding box crops into `data/`:
+   ```powershell
+   python crop_particles.py
+   ```
+4. **Run Training Experiments**: Execute the model training and ablation comparison:
+   ```powershell
+   python experiments.py
+   ```
+   *(Or run standalone training via `python train.py`)*
+5. **Generate Grad-CAM Visualizations**: Create activation heatmaps:
+   ```powershell
+   python gradcam.py
+   ```
+6. **Run Confidence Analysis**: Inspect misclassified sample probability scores:
+   ```powershell
+   python confidence_analysis.py
+   ```
 
 ---
 
 ## Limitations
 
-* **Dataset Scale**: The model is trained on a small dataset (720 total particle crops and 75 test samples). Deep learning models generally benefit from larger sample volumes.
-* **Scope of Classification**: The model performs binary morphological classification (fiber vs fragment). It does not perform polymer type identification (e.g., FTIR spectroscopy analysis) nor does it detect or classify other shapes such as beads, pellets, or films.
-* **Dataset Dependence**: Reported accuracy reflects performance on this specific held-out test split. Performance may vary on imagery captured under different lighting, magnification, optical settings, or environmental backgrounds.
-* **Background Sensitivity**: Bounding box cropping includes small surrounding background regions. As highlighted by Grad-CAM, background artifacts can influence network predictions.
-* **No Real-World Deployment Claim**: This project demonstrates computer vision methodology for portfolio evaluation and is not presented as a production-ready or field-tested microplastic quantification system.
+* **Dataset Size**: The dataset contains 720 total particle crops and a held-out test set of 75 particles.
+* **Dataset-Specific Performance**: The reported 97.33% accuracy reflects evaluation strictly on this project's held-out test set and does not imply general performance across all real-world microplastic samples.
+* **Scope of Classification**: The model performs binary morphological classification (fiber vs fragment). It is not a complete microplastic detection system and does not perform polymer identification.
+* **Background Artifact Sensitivity**: Cropped images include small background regions around particles, which can influence model predictions as observed in Grad-CAM outputs.
+* **No External Validation**: The model has not been validated on an independent external microplastic image dataset.
+* **Interpretability Scope**: Grad-CAM heatmaps provide visual interpretability evidence but do not establish definitive causal explanations.
 
 ---
 
 ## Future Work
 
-* **Expanded Morphology Classes**: Incorporate additional categories such as beads, pellets, films, and foams.
-* **Background Removal & Segmentation**: Implement semantic segmentation (e.g., Mask R-CNN or U-Net) prior to classification to isolate particles from background slide noise.
-* **Cross-Dataset Validation**: Evaluate model generalization across independent external microplastic image databases.
-* **Architectural Benchmarking**: Compare ResNet18 against alternative lightweight CNN architectures (EfficientNet, MobileNetV3) and Vision Transformers (ViT).
-* **Advanced Data Augmentation**: Apply color jittering, background swapping, and synthetic noise injection to improve robust feature learning.
-* **Handling Visually Ambiguous Particles**: Explore multi-label classification or distance-based uncertainty estimation for boundary cases between fibers and elongated fragments.
+* **Larger and More Diverse Datasets**: Expand particle sample counts across varied background surfaces and optical conditions.
+* **Independent External Validation**: Evaluate generalization capability on separate external microplastic benchmarks.
+* **Particle Segmentation**: Implement semantic or instance segmentation prior to classification to isolate particle masks from background slide artifacts.
+* **Additional Morphology Classes**: Include extra particle categories such as beads, pellets, films, and foams.
+* **Model Comparisons**: Benchmark ResNet18 performance against alternative architectures like EfficientNet, MobileNetV3, and Vision Transformers.
+* **Handling Visually Ambiguous Particles**: Incorporate uncertainty estimation for borderline particle shapes.
 
 ---
 
-## License and Attribution
+## Dataset Attribution
 
-* **Code License**: MIT License
-* **Dataset Attribution**: The dataset used in this project is provided by Mendeley Data under CC BY-NC-ND 4.0. Refer to [Mendeley Data DOI: 10.17632/5c4wfd99w8.2](https://data.mendeley.com/datasets/5c4wfd99w8.2) for the original research context and citation.
+* **Dataset Source**: [Roboflow Universe - Microplastic v2 Version 2](https://universe.roboflow.com/research-new-things-m0fiq/microplastic-v2-wowak/dataset/2)
+* **Roboflow Workspace**: `research-new-things-m0fiq/microplastic-v2-wowak`
+* **Dataset Name**: Microplastic v2 (Version 2)
+
+For dataset licensing details and terms of use, please visit the original Roboflow Universe dataset page.
+
+---
+
+## License
+
+This project code is licensed under the MIT License.
